@@ -4,9 +4,10 @@ const XKCD  = "https://xkcd.com";
 const STORAGE_KEY = "xkcd_read";
 const FAV_KEY     = "xkcd_fav";
 
-let latestNum  = 1;
+let latestNum  = 0;
 let currentNum = 1;
 let activeTab  = "read";
+let isLoading  = false;
 
 // --- Storage ---
 function getRead() {
@@ -87,12 +88,20 @@ function renderList(tab) {
 // --- Apply comic data to UI ---
 function applyComic(data) {
   currentNum = data.num;
+  // Always keep latestNum up to date — matters when Latest is clicked after a failed init
+  if (data.num > latestNum) latestNum = data.num;
 
   document.getElementById("comic-num").textContent = `#${data.num}`;
   document.getElementById("comic-date").textContent =
     `${data.year}-${String(data.month).padStart(2,"0")}-${String(data.day).padStart(2,"0")}`;
   document.getElementById("comic-title").textContent = data.title;
-  document.getElementById("comic-img").src = data.img;
+  const imgEl = document.getElementById("comic-img");
+  const skeleton = document.getElementById("img-skeleton");
+  imgEl.classList.add("loading");
+  skeleton.classList.add("active");
+  imgEl.onload = () => { imgEl.classList.remove("loading"); skeleton.classList.remove("active"); };
+  imgEl.onerror = () => { skeleton.classList.remove("active"); imgEl.classList.remove("loading"); };
+  imgEl.src = data.img;
   document.getElementById("comic-img").alt = data.alt;
   document.getElementById("comic-alt").textContent = data.alt;
   document.getElementById("comic-input").value = data.num;
@@ -125,16 +134,28 @@ function applyComic(data) {
   renderList(activeTab);
 }
 
-async function loadComic(num) {
+function setLoadingState() {
   document.getElementById("comic-title").textContent = "Loading...";
   document.getElementById("comic-alt").textContent   = "";
   document.getElementById("comic-img").src           = "";
+  document.getElementById("comic-num").textContent   = "";
+  document.getElementById("comic-date").textContent  = "";
+  document.getElementById("img-skeleton").classList.add("active");
+}
+
+async function loadComic(num) {
+  if (isLoading) return;
+  isLoading = true;
+  setLoadingState();
   try {
     const data = await fetchComic(num);
     applyComic(data);
   } catch {
     setStatus("Could not load comic.", 3000);
     document.getElementById("comic-title").textContent = "Error loading comic.";
+    document.getElementById("img-skeleton").classList.remove("active");
+  } finally {
+    isLoading = false;
   }
 }
 
@@ -313,13 +334,18 @@ document.getElementById("btn-import").addEventListener("change", e => {
 
 // --- Init ---
 (async () => {
+  isLoading = true;
+  setLoadingState();
   try {
     const data = await fetchComic(null);
     latestNum  = data.num;
     applyComic(data);
   } catch {
     setStatus("Could not load latest comic.", 0);
-    document.getElementById("comic-title").textContent = "Failed to connect.";
+    document.getElementById("comic-title").textContent = "Failed to connect — check your connection.";
     document.getElementById("progress-text").textContent = "Offline?";
+    document.getElementById("img-skeleton").classList.remove("active");
+  } finally {
+    isLoading = false;
   }
 })();
