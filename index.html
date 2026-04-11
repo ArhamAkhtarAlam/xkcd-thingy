@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>XKCD Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>XKCD Tracker</h1>
+    <div id="progress-bar-wrap">
+      <div id="progress-bar"></div>
+    </div>
+    <p id="progress-text">Loading...</p>
+  </header>
+
+  <main>
+    <div id="controls">
+      <button id="btn-first" title="First comic">&#171; First</button>
+      <button id="btn-prev">&#8249; Prev</button>
+      <input id="comic-input" type="number" min="1" placeholder="#" />
+      <button id="btn-go">Go</button>
+      <button id="btn-next">Next &#8250;</button>
+      <button id="btn-latest">Latest &#187;</button>
+      <button id="btn-random">Random</button>
+    </div>
+
+    <div id="comic-card">
+      <div id="comic-meta">
+        <span id="comic-num"></span>
+        <span id="comic-date"></span>
+      </div>
+      <h2 id="comic-title">...</h2>
+      <div id="comic-img-wrap">
+        <img id="comic-img" src="" alt="" />
+      </div>
+      <div id="alt-box">
+        <span id="alt-label">Alt text:</span>
+        <span id="comic-alt"></span>
+      </div>
+      <button id="btn-read">Mark as Read</button>
+    </div>
+  </main>
+
+  <footer>
+    <button id="btn-export">Export Progress</button>
+    <label id="btn-import-label">
+      Import Progress
+      <input id="btn-import" type="file" accept=".json" />
+    </label>
+    <span id="status-msg"></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
