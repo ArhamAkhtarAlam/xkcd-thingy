@@ -138,8 +138,15 @@ async function buildFullIndex() {
 }
 
 // ===================== HISTORY / STREAKS =====================
+// Always use local date strings (YYYY-MM-DD) to avoid UTC timezone mismatches
+function localDateStr(offsetDays = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() - offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
 function recordReadToday() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
   const h = getHistory();
   if (!h.includes(today)) { h.push(today); saveHistory(h); }
 }
@@ -147,11 +154,12 @@ function recordReadToday() {
 function computeCurrentStreak() {
   const history = new Set(getHistory());
   let streak = 0;
-  for (let i = 0; i < 365; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    if (history.has(d.toISOString().slice(0, 10))) streak++;
-    else if (i > 0) break;
+  // Start from today; if today has no reads yet, start from yesterday
+  // so the streak stays alive as long as yesterday was read
+  const startOffset = history.has(localDateStr(0)) ? 0 : 1;
+  for (let i = startOffset; i < 365; i++) {
+    if (history.has(localDateStr(i))) streak++;
+    else break;
   }
   return streak;
 }
@@ -161,9 +169,13 @@ function computeLongestStreak() {
   if (!dates.length) return 0;
   let longest = 1, cur = 1;
   for (let i = 1; i < dates.length; i++) {
-    const diff = (new Date(dates[i]) - new Date(dates[i-1])) / 86400000;
+    // Compare as local date strings — subtract by parsing them directly
+    const [y1,m1,d1] = dates[i-1].split("-").map(Number);
+    const [y2,m2,d2] = dates[i].split("-").map(Number);
+    const diff = (new Date(y2,m2-1,d2) - new Date(y1,m1-1,d1)) / 86400000;
     if (diff === 1) { cur++; longest = Math.max(longest, cur); }
-    else cur = 1;
+    else if (diff > 1) cur = 1;
+    // diff === 0 means duplicate date, skip
   }
   return longest;
 }
@@ -315,14 +327,51 @@ function renderBrowseByYear() {
 }
 
 // ===================== STATS =====================
+function statCard(value, label, color) {
+  return `<div class="stat-card" style="--card-color:${color}">
+    <div class="stat-card-val">${value}</div>
+    <div class="stat-card-lbl">${label}</div>
+  </div>`;
+}
+
 function renderStats() {
   const container = document.getElementById("stats-content");
   container.innerHTML = "";
 
   const read = getRead(), favs = getFavs(), ratings = getRatings();
-  const streak = computeCurrentStreak(), longest = computeLongestStreak();
+  const streak  = computeCurrentStreak();
+  const longest = computeLongestStreak();
   const idx = getIndex();
+  const pct = latestNum ? (read.size / latestNum * 100).toFixed(1) : "0.0";
 
+  // --- stat cards ---
+  const cardsHTML = `<div class="stats-grid">
+    ${statCard(read.size,    "Comics Read",   "#4a9eff")}
+    ${statCard(latestNum - read.size, "Unread", "#8b6fff")}
+    ${statCard(pct + "%",   "Complete",      "#14b8a6")}
+    ${statCard(favs.size,   "Favorites",     "#fbbf24")}
+    ${statCard(streak + (streak === 1 ? " day" : " days"), "Streak 🔥", "#f97316")}
+    ${statCard(longest + (longest === 1 ? " day" : " days"), "Best Streak", "#ec4899")}
+  </div>`;
+
+  // --- rating distribution ---
+  const ratingDist = [0,0,0,0,0];
+  for (const [,v] of ratings) ratingDist[v-1]++;
+  const maxR = Math.max(...ratingDist, 1);
+  const ratingHTML = ratings.size > 0 ? `
+    <div class="stats-section">
+      <div class="stats-section-title">⭐ Ratings  <span class="stats-section-sub">${ratings.size} rated</span></div>
+      ${ratingDist.map((count, i) => `
+        <div class="dist-row">
+          <span class="dist-label gold">${i+1}★</span>
+          <div class="dist-bar-wrap">
+            <div class="dist-bar gold-bar" style="width:${count ? Math.max(3, count/maxR*100) : 0}%"></div>
+          </div>
+          <span class="dist-count">${count}</span>
+        </div>`).join("")}
+    </div>` : "";
+
+  // --- by year ---
   const byYear = {};
   for (const [numStr, info] of idx) {
     const y = info.year;
@@ -330,47 +379,29 @@ function renderStats() {
     byYear[y].total++;
     if (read.has(parseInt(numStr))) byYear[y].read++;
   }
+  const maxYearRead = Math.max(...Object.values(byYear).map(d => d.read), 1);
 
-  const ratingDist = [0,0,0,0,0];
-  for (const [,v] of ratings) ratingDist[v-1]++;
-  const maxRating = Math.max(...ratingDist, 1);
-
-  container.innerHTML = `
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-card-val">${read.size}</div><div class="stat-card-lbl">Read</div></div>
-      <div class="stat-card"><div class="stat-card-val">${favs.size}</div><div class="stat-card-lbl">Favorites</div></div>
-      <div class="stat-card"><div class="stat-card-val">${streak}</div><div class="stat-card-lbl">Day Streak 🔥</div></div>
-      <div class="stat-card"><div class="stat-card-val">${longest}</div><div class="stat-card-lbl">Best Streak</div></div>
-      <div class="stat-card"><div class="stat-card-val">${ratings.size}</div><div class="stat-card-lbl">Rated</div></div>
-      <div class="stat-card"><div class="stat-card-val">${latestNum ? (read.size/latestNum*100).toFixed(1)+"%" : "—"}</div><div class="stat-card-lbl">Complete</div></div>
-    </div>
-
-    ${ratingDist.some(v=>v>0) ? `
+  const yearHTML = Object.keys(byYear).length ? `
     <div class="stats-section">
-      <h4>Rating Breakdown</h4>
-      ${ratingDist.map((count,i) => `
-        <div class="dist-row">
-          <span class="dist-label">${"★".repeat(i+1)}</span>
-          <div class="dist-bar-wrap"><div class="dist-bar" style="width:${(count/maxRating*100).toFixed(1)}%"></div></div>
-          <span class="dist-count">${count}</span>
-        </div>`).join("")}
-    </div>` : ""}
-
-    ${Object.keys(byYear).length ? `
-    <div class="stats-section">
-      <h4>Read by Year</h4>
-      ${Object.entries(byYear).sort(([a],[b])=>a-b).map(([year,data]) => `
-        <div class="dist-row">
-          <span class="dist-label year-lbl">${year}</span>
-          <div class="dist-bar-wrap"><div class="dist-bar year-bar" style="width:${data.total?(data.read/data.total*100).toFixed(1):0}%"></div></div>
-          <span class="dist-count">${data.read}/${data.total}</span>
-        </div>`).join("")}
+      <div class="stats-section-title">📅 Read by Year  <span class="stats-section-sub">${idx.size} of ${latestNum} indexed ${idx.size < latestNum ? `— <button class="inline-btn" onclick="buildFullIndex()">index all</button>` : "✓"}</span></div>
+      ${Object.entries(byYear).sort(([a],[b]) => a-b).map(([year, data]) => {
+        const pctYear = data.total ? (data.read / data.total * 100).toFixed(0) : 0;
+        return `<div class="dist-row">
+          <span class="dist-label muted">${year}</span>
+          <div class="dist-bar-wrap">
+            <div class="dist-bar teal-bar" style="width:${data.read ? Math.max(3, data.read/maxYearRead*100) : 0}%"></div>
+          </div>
+          <span class="dist-count">${data.read}/${data.total} <span class="dist-pct">${pctYear}%</span></span>
+        </div>`;
+      }).join("")}
     </div>` : `
-    <p class="list-empty" style="margin-top:1rem">
-      Build the comic index to see year-by-year stats.
-      <button class="inline-btn" onclick="buildFullIndex()">Start indexing</button>
-    </p>`}
-  `;
+    <div class="stats-section">
+      <div class="stats-section-title">📅 Read by Year</div>
+      <p class="list-empty">Build the index first to see year-by-year stats.
+        <button class="inline-btn" onclick="buildFullIndex()">Start indexing</button></p>
+    </div>`;
+
+  container.innerHTML = cardsHTML + ratingHTML + yearHTML;
 }
 
 // ===================== SEARCH =====================
@@ -786,8 +817,10 @@ document.addEventListener("keydown", e => {
     case "m": case "M": document.getElementById("btn-read").click(); break;
     case "z": case "Z": document.getElementById("comic-img-wrap").click(); break;
     case "s": case "S": e.preventDefault(); openSearch(); break;
-    case "l": case "L": { const n = getLatestUnread(); if (n) loadComic(n); else setStatus("No unread comics!"); break; }
     case "[": { const n = getFirstUnread();  if (n) loadComic(n); else setStatus("No unread comics!"); break; }
+    case "]": { const n = getLatestUnread(); if (n) loadComic(n); else setStatus("No unread comics!"); break; }
+    case "1": case "2": case "3": case "4": case "5":
+      setRating(currentNum, parseInt(e.key)); break;
   }
 });
 
