@@ -9,6 +9,7 @@ body {
   flex-direction: column;
 }
 
+/* ---- Header ---- */
 header {
   padding: 1.5rem 2rem 1rem;
   border-bottom: 1px solid #222;
@@ -39,11 +40,9 @@ header h1 {
   transition: width 0.4s ease;
 }
 
-#progress-text {
-  font-size: 0.85rem;
-  color: #888;
-}
+#progress-text { font-size: 0.85rem; color: #888; }
 
+/* ---- Main ---- */
 main {
   flex: 1;
   display: flex;
@@ -53,6 +52,7 @@ main {
   gap: 1.25rem;
 }
 
+/* ---- Controls ---- */
 #controls {
   display: flex;
   flex-wrap: wrap;
@@ -74,6 +74,9 @@ main {
 
 #controls button:hover { background: #252525; border-color: #4a9eff; }
 
+#btn-random-unread { border-color: #7c5cff; color: #b09dff; }
+#btn-random-unread:hover { background: #1a1530; border-color: #b09dff; }
+
 #comic-input {
   width: 70px;
   padding: 0.45rem 0.5rem;
@@ -85,6 +88,7 @@ main {
   text-align: center;
 }
 
+/* ---- Comic card ---- */
 #comic-card {
   background: #141414;
   border: 1px solid #222;
@@ -104,10 +108,7 @@ main {
   color: #666;
 }
 
-#comic-title {
-  font-size: 1.3rem;
-  color: #fff;
-}
+#comic-title { font-size: 1.3rem; color: #fff; }
 
 #comic-img-wrap {
   display: flex;
@@ -152,9 +153,64 @@ main {
   transition: background 0.15s, color 0.15s;
 }
 
-#btn-read:hover { background: #4a9eff; color: #000; }
+#btn-read:hover { background: #4a9eff22; }
 #btn-read.read { background: #4a9eff; color: #000; }
 
+/* ---- Read list ---- */
+#read-list-section {
+  max-width: 760px;
+  width: 100%;
+}
+
+#btn-toggle-list {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: #141414;
+  border: 1px solid #222;
+  border-radius: 8px;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+#btn-toggle-list:hover { background: #1c1c1c; border-color: #4a9eff; color: #e8e8e8; }
+
+#read-list {
+  margin-top: 0.5rem;
+  background: #141414;
+  border: 1px solid #222;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+#read-list.hidden { display: none; }
+
+#read-list-empty { color: #555; font-size: 0.9rem; }
+#read-list-empty.hidden { display: none; }
+
+#read-list-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.read-chip {
+  padding: 0.3rem 0.65rem;
+  background: #1e2a3a;
+  border: 1px solid #2a4060;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #7ab8ff;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.read-chip:hover { background: #253545; }
+
+/* ---- Footer ---- */
 footer {
   display: flex;
   flex-wrap: wrap;
@@ -178,7 +234,6 @@ footer button,
 }
 
 footer button:hover, #btn-import-label:hover { background: #252525; }
-
 #btn-import { display: none; }
 
 #status-msg {
@@ -186,3 +241,56 @@ footer button:hover, #btn-import-label:hover { background: #252525; }
   color: #4a9eff;
   min-height: 1em;
 }
+
+/* ---- Modal ---- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: #000a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal.hidden { display: none; }
+
+.modal-box {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 2rem;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modal-box h3 { font-size: 1.1rem; color: #fff; }
+
+.modal-box table { border-collapse: collapse; width: 100%; }
+.modal-box td { padding: 0.4rem 0.75rem; font-size: 0.9rem; color: #ccc; }
+.modal-box td:first-child { text-align: right; }
+
+kbd {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #e8e8e8;
+}
+
+#btn-close-modal {
+  align-self: flex-end;
+  padding: 0.4rem 1rem;
+  background: #252525;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #e8e8e8;
+  cursor: pointer;
+}
+
+#btn-close-modal:hover { background: #333; }

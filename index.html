@@ -17,13 +17,14 @@
 
   <main>
     <div id="controls">
-      <button id="btn-first" title="First comic">&#171; First</button>
-      <button id="btn-prev">&#8249; Prev</button>
-      <input id="comic-input" type="number" min="1" placeholder="#" />
-      <button id="btn-go">Go</button>
-      <button id="btn-next">Next &#8250;</button>
-      <button id="btn-latest">Latest &#187;</button>
-      <button id="btn-random">Random</button>
+      <button id="btn-first" title="First comic [Home]">&#171; First</button>
+      <button id="btn-prev" title="Previous [&#8592;]">&#8249; Prev</button>
+      <input id="comic-input" type="number" min="1" placeholder="#" title="Jump to comic [Enter]" />
+      <button id="btn-go" title="Go [Enter]">Go</button>
+      <button id="btn-next" title="Next [&#8594;]">Next &#8250;</button>
+      <button id="btn-latest" title="Latest comic [End]">Latest &#187;</button>
+      <button id="btn-random" title="Random comic [R]">Random</button>
+      <button id="btn-random-unread" title="Random unread comic [U]">Random Unread</button>
     </div>
 
     <div id="comic-card">
@@ -39,7 +40,15 @@
         <span id="alt-label">Alt text:</span>
         <span id="comic-alt"></span>
       </div>
-      <button id="btn-read">Mark as Read</button>
+      <button id="btn-read" title="Toggle read [M]">Mark as Read</button>
+    </div>
+
+    <div id="read-list-section">
+      <button id="btn-toggle-list">Show Read Comics (0)</button>
+      <div id="read-list" class="hidden">
+        <p id="read-list-empty" class="hidden">No comics marked as read yet.</p>
+        <div id="read-list-grid"></div>
+      </div>
     </div>
   </main>
 
@@ -49,8 +58,26 @@
       Import Progress
       <input id="btn-import" type="file" accept=".json" />
     </label>
+    <button id="btn-shortcuts">Keyboard Shortcuts</button>
     <span id="status-msg"></span>
   </footer>
+
+  <div id="shortcuts-modal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Keyboard Shortcuts</h3>
+      <table>
+        <tr><td><kbd>&#8592;</kbd></td><td>Previous comic</td></tr>
+        <tr><td><kbd>&#8594;</kbd></td><td>Next comic</td></tr>
+        <tr><td><kbd>Home</kbd></td><td>First comic</td></tr>
+        <tr><td><kbd>End</kbd></td><td>Latest comic</td></tr>
+        <tr><td><kbd>R</kbd></td><td>Random comic</td></tr>
+        <tr><td><kbd>U</kbd></td><td>Random unread comic</td></tr>
+        <tr><td><kbd>M</kbd></td><td>Toggle mark as read</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close this dialog</td></tr>
+      </table>
+      <button id="btn-close-modal">Close</button>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
