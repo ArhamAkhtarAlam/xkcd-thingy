@@ -7,24 +7,31 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
   <header>
     <h1>XKCD Tracker</h1>
     <div id="progress-bar-wrap">
       <div id="progress-bar"></div>
     </div>
     <p id="progress-text">Loading...</p>
+    <div id="stats-row">
+      <span class="stat-chip" id="stat-read">📖 0 read</span>
+      <span class="stat-chip" id="stat-fav">⭐ 0 favorites</span>
+      <span class="stat-chip" id="stat-unread">💤 0 unread</span>
+    </div>
   </header>
 
   <main>
     <div id="controls">
       <button id="btn-first" title="First comic [Home]">&#171; First</button>
-      <button id="btn-prev" title="Previous [&#8592;]">&#8249; Prev</button>
-      <input id="comic-input" type="number" min="1" placeholder="#" title="Jump to comic [Enter]" />
-      <button id="btn-go" title="Go [Enter]">Go</button>
-      <button id="btn-next" title="Next [&#8594;]">Next &#8250;</button>
-      <button id="btn-latest" title="Latest comic [End]">Latest &#187;</button>
-      <button id="btn-random" title="Random comic [R]">Random</button>
-      <button id="btn-random-unread" title="Random unread comic [U]">Random Unread</button>
+      <button id="btn-prev" title="Previous [←]">&#8249; Prev</button>
+      <input id="comic-input" type="number" min="1" placeholder="#" title="Jump to comic" />
+      <button id="btn-go">Go</button>
+      <button id="btn-next" title="Next [→]">Next &#8250;</button>
+      <button id="btn-latest" title="Latest [End]">Latest &#187;</button>
+      <button id="btn-random" title="Random [R]">Random</button>
+      <button id="btn-random-unread" title="Random Unread [U]">Random Unread</button>
+      <button id="btn-random-fav" title="Random Favorite [F]">Random Fav ⭐</button>
     </div>
 
     <div id="comic-card">
@@ -33,21 +40,38 @@
         <span id="comic-date"></span>
       </div>
       <h2 id="comic-title">...</h2>
-      <div id="comic-img-wrap">
+
+      <div id="comic-img-wrap" title="Click to zoom">
         <img id="comic-img" src="" alt="" />
+        <div id="zoom-hint">🔍 Click to zoom</div>
       </div>
+
       <div id="alt-box">
-        <span id="alt-label">Alt text:</span>
+        <span id="alt-label">Alt text</span>
         <span id="comic-alt"></span>
+        <button id="btn-copy-alt" title="Copy alt text">Copy</button>
       </div>
-      <button id="btn-read" title="Toggle read [M]">Mark as Read</button>
+
+      <div id="comic-actions">
+        <button id="btn-read" title="Toggle read [M]">Mark as Read</button>
+        <button id="btn-fav" title="Toggle favorite [F]">⭐ Favorite</button>
+        <a id="link-xkcd" href="#" target="_blank" rel="noopener" class="action-link">View on XKCD ↗</a>
+        <a id="link-explain" href="#" target="_blank" rel="noopener" class="action-link explain-link">Explain XKCD ↗</a>
+      </div>
     </div>
 
     <div id="read-list-section">
-      <button id="btn-toggle-list">Show Read Comics (0)</button>
-      <div id="read-list" class="hidden">
-        <p id="read-list-empty" class="hidden">No comics marked as read yet.</p>
+      <div id="list-tabs">
+        <button class="tab-btn active" data-tab="read">Read Comics</button>
+        <button class="tab-btn" data-tab="favorites">Favorites</button>
+      </div>
+      <div id="read-list">
+        <p id="read-list-empty" class="list-empty hidden">No comics marked as read yet.</p>
         <div id="read-list-grid"></div>
+      </div>
+      <div id="fav-list" class="hidden">
+        <p id="fav-list-empty" class="list-empty hidden">No favorites yet.</p>
+        <div id="fav-list-grid"></div>
       </div>
     </div>
   </main>
@@ -58,22 +82,30 @@
       Import Progress
       <input id="btn-import" type="file" accept=".json" />
     </label>
-    <button id="btn-shortcuts">Keyboard Shortcuts</button>
+    <button id="btn-shortcuts">Shortcuts ⌨</button>
     <span id="status-msg"></span>
   </footer>
 
+  <!-- Zoom lightbox -->
+  <div id="lightbox" class="hidden">
+    <button id="lightbox-close">✕</button>
+    <img id="lightbox-img" src="" alt="" />
+  </div>
+
+  <!-- Shortcuts modal -->
   <div id="shortcuts-modal" class="modal hidden">
     <div class="modal-box">
       <h3>Keyboard Shortcuts</h3>
       <table>
-        <tr><td><kbd>&#8592;</kbd></td><td>Previous comic</td></tr>
-        <tr><td><kbd>&#8594;</kbd></td><td>Next comic</td></tr>
+        <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Previous / Next comic</td></tr>
         <tr><td><kbd>Home</kbd></td><td>First comic</td></tr>
         <tr><td><kbd>End</kbd></td><td>Latest comic</td></tr>
         <tr><td><kbd>R</kbd></td><td>Random comic</td></tr>
         <tr><td><kbd>U</kbd></td><td>Random unread comic</td></tr>
+        <tr><td><kbd>F</kbd></td><td>Toggle favorite</td></tr>
         <tr><td><kbd>M</kbd></td><td>Toggle mark as read</td></tr>
-        <tr><td><kbd>Esc</kbd></td><td>Close this dialog</td></tr>
+        <tr><td><kbd>Z</kbd></td><td>Zoom image</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close dialog / zoom</td></tr>
       </table>
       <button id="btn-close-modal">Close</button>
     </div>
