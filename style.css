@@ -232,7 +232,9 @@ main {
   box-shadow: 0 8px 60px #00000070, 0 0 0 1px #ffffff04;
   position: relative;
   overflow: hidden;
+  transition: opacity 0.18s ease;
 }
+#comic-card.fading { opacity: 0; }
 
 #comic-card::before {
   content: '';

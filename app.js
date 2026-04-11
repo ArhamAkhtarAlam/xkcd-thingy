@@ -22,12 +22,37 @@ function getFavs() {
 }
 function saveFavs(set) { localStorage.setItem(FAV_KEY, JSON.stringify([...set])); }
 
-// --- Fetch ---
+// --- Cache & Fetch ---
+const comicCache = new Map(); // num -> comic data object
+
 async function fetchComic(num) {
   const endpoint = num ? `${XKCD}/${num}/info.0.json` : `${XKCD}/info.0.json`;
   const res = await fetch(`${PROXY}${encodeURIComponent(endpoint)}`);
   if (!res.ok) throw new Error("Not found");
   return res.json();
+}
+
+// Get from cache or fetch, caching the result
+function getComic(num) {
+  if (num === null) return fetchComic(null); // latest — don't cache by null
+  if (!comicCache.has(num)) {
+    comicCache.set(num, fetchComic(num).catch(err => {
+      comicCache.delete(num); // remove failed entries so they can be retried
+      throw err;
+    }));
+  }
+  return comicCache.get(num);
+}
+
+// Silently prefetch neighbours without blocking anything
+function prefetch(centerNum) {
+  if (!centerNum || !latestNum) return;
+  const targets = [centerNum - 2, centerNum - 1, centerNum + 1, centerNum + 2];
+  for (const n of targets) {
+    if (n >= 1 && n <= latestNum && n !== 404 && !comicCache.has(n)) {
+      comicCache.set(n, fetchComic(n).catch(() => { comicCache.delete(n); }));
+    }
+  }
 }
 
 // --- Status ---
@@ -132,6 +157,10 @@ function applyComic(data) {
 
   updateProgress();
   renderList(activeTab);
+
+  // Cache the current comic data and prefetch neighbours
+  comicCache.set(data.num, Promise.resolve(data));
+  prefetch(data.num);
 }
 
 function setLoadingState() {
@@ -146,11 +175,27 @@ function setLoadingState() {
 async function loadComic(num) {
   if (isLoading) return;
   isLoading = true;
-  setLoadingState();
+
+  const card   = document.getElementById("comic-card");
+  const cached = num !== null && comicCache.has(num);
+
+  // Fade out card before switching
+  card.classList.add("fading");
+
+  // For non-cached comics, also show the loading skeleton
+  const skeletonTimer = cached ? null : setTimeout(setLoadingState, 80);
+
   try {
-    const data = await fetchComic(num);
+    const data = await (num === null ? fetchComic(null) : getComic(num));
+    clearTimeout(skeletonTimer);
     applyComic(data);
+    // Small delay lets the CSS transition reset, then fade back in
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => card.classList.remove("fading"));
+    });
   } catch {
+    clearTimeout(skeletonTimer);
+    card.classList.remove("fading");
     setStatus("Could not load comic.", 3000);
     document.getElementById("comic-title").textContent = "Error loading comic.";
     document.getElementById("img-skeleton").classList.remove("active");
